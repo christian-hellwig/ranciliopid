@@ -52,6 +52,9 @@ enum MACHINE {
 #define BREWMODE 1                 // 1 = NORMAL preinfusion ; 2 = Scale with weight
 #define BREWDETECTION 1            // 0 = off, 1 = Software (Onlypid 1), 2 = Hardware (Onlypid 0), 3 = Sensor/Hardware for Only PID
 #define BREWSWITCHTYPE 1           //  1 = normal Switch, 2 = Trigger Switch
+#define STEAMSWITCHTYPE 1          //  1 = normal Switch, 2 = Trigger Switch
+#define WATERSWITCHTYPE 1          //  1 = normal Switch, 2 = Trigger Switch
+#define POWERSWITCHTYPE 1          //  1 = normal Switch, 2 = Trigger Switch
 #define COLDSTART_PID 1            // 1 = default coldstart values, 2 = custom values via blynk (expert mode activated)
 #define TRIGGERTYPE HIGH           // LOW = low trigger, HIGH = high trigger relay
 #define VOLTAGESENSORTYPE HIGH     // BREWDETECTION 3 configuration
@@ -148,9 +151,24 @@ enum MACHINE {
 #define PINVOLTAGESENSOR  15       //Input pin for volatage sensor
 //#define OLED_RESET 16            // Output pin for dispaly reset pin
 #define PINETRIGGER 16             // PIN for E-Trigger relay
-
 #define PINBREWSWITCH 0            // 0: A0 (ESP8266) ; >0 : DIGITAL PIN, ESP32 OR ESP8266: ONLY USE PIN15 AND PIN16!
+#define PINBREWSWITCHACTIVE LOW
+#define PINBREWSWITCHLED
+#define PINBREWSWITCHLEDACTIVE HIGH
 #define PINSTEAMSWITCH 17          // STEAM active
+#define PINSTEAMSWITCHACTIVE LOW
+#define PINSTEAMSWITCHLED -1
+#define PINSTEAMSWITCHLEDACTIVE HIGH
+#define PINWATERSWITCH -1
+#define PINWATERSWITCHACTIVE LOW
+#define PINWATERSWITCHLED -1 
+#define PINWATERSWITCHLEDACTIVE HIGH
+#define PINPOWERSWITCH -1
+#define PINPOWERSWITCHACTIVE LOW
+#define PINPOWERSWITCHLED -1
+#define PINPOWERSWITCHLEDACTIVE HIGH
+#define PINSTATUSLED -1
+#define PINSTATUSLEDACTIVE HIGH
 #define LEDPIN    18               // LED PIN ON near setpoint 
 #define OLED_SCL 5                 // Output pin for dispaly clock pin
 #define OLED_SDA 4                 // Output pin for dispaly data pin
