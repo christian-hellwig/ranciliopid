@@ -14,9 +14,9 @@
     timer1_write(6250); // set interrupt time to 20ms
 
     if (Output <= isrCounter) {
-        digitalWrite(pinRelayHeater, LOW);
+        digitalWrite(PINHEATER, LOW);
     } else {
-        digitalWrite(pinRelayHeater, HIGH);
+        digitalWrite(PINHEATER, HIGH);
     }
 
     isrCounter += 20; // += 20 because one tick = 20ms
@@ -33,9 +33,9 @@
     //timer1_write(50000); // set interrupt time to 10ms
       timerAlarmWrite(timer, 10000, true);
     if (Output <= isrCounter) {
-      digitalWrite(pinRelayHeater, LOW);
+      digitalWrite(PINHEATER, LOW);
     } else {
-      digitalWrite(pinRelayHeater, HIGH);
+      digitalWrite(PINHEATER, HIGH);
     }
 
     isrCounter += 10; // += 10 because one tick = 10ms

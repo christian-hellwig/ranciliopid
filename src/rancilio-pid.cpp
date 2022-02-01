@@ -53,8 +53,8 @@ MACHINE machine = (enum MACHINE)MACHINEID;
 
 #define HIGH_ACCURACY
 
-#include "PeriodicTrigger.h"             // Trigger, der alle x Millisekunden auf true schaltet
-PeriodicTrigger writeDebugTrigger(5000); // trigger alle 5000 ms
+#include "PeriodicTrigger.h"             
+PeriodicTrigger writeDebugTrigger(5000); // triggers every 5000 ms
 PeriodicTrigger logbrew(500);
 
 /**
@@ -1090,15 +1090,15 @@ void brewdetection() {
 
   if (Brewdetection == 1) {
     if (timerBrewdetection == 1) {
-      bezugsZeit = millis() - timeBrewdetection;
+      brewTime = millis() - timeBrewdetection;
     }
 
-    // Bezugstimmer für SW deaktivieren nach ende BD PID
+    // deactivate brewtimer after end of brewdetection pid
     if (millis() - timeBrewdetection > brewtimersoftware * 1000 && timerBrewdetection == 1) {
       timerBrewdetection = 0; //rearm brewdetection
-      if (machinestate != 30) // Bei Onlypid = 1, bezugsZeit > 0, no reset of bezugsZeit in case of brewing.
+      if (machinestate != 30) // if Onlypid = 1, brewTime > 0, no reset of brewTime in case of brewing.
       {
-        bezugsZeit = 0;
+        brewTime = 0;
       }
     }
   }
@@ -1108,21 +1108,21 @@ void brewdetection() {
     }
   }
   else if (Brewdetection == 3) {
-    // Bezugszeit hochzaehlen
+    // brewTime counter
     if ((digitalRead(PINVOLTAGESENSOR) == VoltageSensorON) && brewDetected == 1) {
-      bezugsZeit = millis() - startZeit;
-      lastbezugszeit = bezugsZeit;
+      brewTime = millis() - startingTime;
+      lastbrewTime = brewTime;
     }
 
-    //  OFF: Bezug zurücksetzen
+    //  OFF: reset brew
     if ((digitalRead(PINVOLTAGESENSOR) == VoltageSensorOFF) && (brewDetected == 1 || coolingFlushDetectedQM == true)) {
       brewDetected = 0;
-      timePVStoON = bezugsZeit; // for QuickMill
-      bezugsZeit = 0;
-      startZeit = 0;
+      timePVStoON = brewTime; // for QuickMill
+      brewTime = 0;
+      startingTime = 0;
       coolingFlushDetectedQM = false;
       Serial.println("HW Brew - Voltage Sensor - End");
-      //   lastbezugszeitMillis = millis(); // Bezugszeit für Delay
+      //   lastbrewTimeMillis = millis(); // brewTime für Delay
     }
 
     if (millis() - timeBrewdetection > brewtimersoftware * 1000 && timerBrewdetection == 1) { // reset PID Brew 
@@ -1160,7 +1160,7 @@ void brewdetection() {
             timePVStoON = millis();
             timerBrewdetection = 1;
             brewDetected = 0;
-            lastbezugszeit = 0;
+            lastbrewTime = 0;
             brewSteamDetectedQM = 1;
             Serial.println("Quick Mill: setting brewSteamDetectedQM = 1");
             logbrew.reset();
@@ -1181,7 +1181,7 @@ void brewdetection() {
             else if (millis() - timePVStoON > maxBrewDurationForSteamModeQM_ON) {
               if (Input < BrewSetPoint + 2) {
                 Serial.println("Quick Mill: brew-mode detected");
-                startZeit = timePVStoON;
+                startingTime = timePVStoON;
                 brewDetected = 1;
                 brewSteamDetectedQM = 0;
               }
@@ -1202,10 +1202,10 @@ void brewdetection() {
         {
           Serial.println("HW Brew - Voltage Sensor -  Start");
           timeBrewdetection = millis();
-          startZeit = millis();
+          startingTime = millis();
           timerBrewdetection = 1;
           brewDetected = 1;
-          lastbezugszeit = 0;
+          lastbrewTime = 0;
         }
       }
   }
@@ -1342,11 +1342,11 @@ void ETriggervoid() {
  */
 void checkSteamON() {
   // check digital GIPO
-  if (digitalRead(STEAMONPIN) == HIGH) {
+  if (digitalRead(PINSTEAMSWITCH) == HIGH) {
     SteamON = 1;
   }
 
-  if (digitalRead(STEAMONPIN) == LOW && SteamFirstON == 0) // if via blynk on, then SteamFirstON == 1, prevent override
+  if (digitalRead(PINSTEAMSWITCH) == LOW && SteamFirstON == 0) // if via blynk on, then SteamFirstON == 1, prevent override
   {
     SteamON = 0;
   }
@@ -1425,7 +1425,7 @@ void machinestatevoid() {
         pidMode = 0;
         bPID.SetMode(pidMode);
         Output = 0;
-        digitalWrite(pinRelayHeater, LOW); //Stop heating
+        digitalWrite(PINHEATER, LOW); //Stop heating
         // start PID
         pidMode = 1;
         bPID.SetMode(pidMode);
@@ -1474,7 +1474,7 @@ void machinestatevoid() {
         machinestate = kSteam;
       }
 
-      if ((bezugsZeit > 0 && ONLYPID == 1) || // Bezugszeit bei Only PID
+      if ((brewTime > 0 && ONLYPID == 1) || // brewTime bei Only PID
           (ONLYPID == 0 && brewcounter > 10 && brewcounter <= 42))
       {
         machinestate = kBrew;
@@ -1505,7 +1505,7 @@ void machinestatevoid() {
         machinestate = kPidNormal;
       }
 
-      if ((bezugsZeit > 0 && ONLYPID == 1) || // Bezugszeit bei Only PID
+      if ((brewTime > 0 && ONLYPID == 1) || // brewTime bei Only PID
           (ONLYPID == 0 && brewcounter > 10 && brewcounter <= 42))
       {
         machinestate = kBrew;
@@ -1535,7 +1535,7 @@ void machinestatevoid() {
     case kPidNormal:
       brewdetection(); //if brew detected, set PID values
       
-      if ((bezugsZeit > 0 && ONLYPID == 1) || // Bezugszeit bei Only PID
+      if ((brewTime > 0 && ONLYPID == 1) || // brewTime bei Only PID
           (ONLYPID == 0 && brewcounter > 10 && brewcounter <= 42))
       {
         machinestate = kBrew;
@@ -1566,15 +1566,15 @@ void machinestatevoid() {
       brewdetection();
       // Ausgabe waehrend des Bezugs von Bruehzeit, Temp und heatrateaverage
       if (logbrew.check())
-        Serial.printf("(tB,T,hra) --> %5.2f %6.2f %8.2f\n", (double)(millis() - startZeit) / 1000, Input, heatrateaverage);
+        Serial.printf("(tB,T,hra) --> %5.2f %6.2f %8.2f\n", (double)(millis() - startingTime) / 1000, Input, heatrateaverage);
       
-      if ((bezugsZeit > 35 * 1000 && Brewdetection == 1 && ONLYPID == 1) || // 35 sec later and BD PID active SW Solution
-          (bezugsZeit == 0 && Brewdetection == 3 && ONLYPID == 1) ||        // Voltagesensor reset bezugsZeit == 0
+      if ((brewTime > 35 * 1000 && Brewdetection == 1 && ONLYPID == 1) || // 35 sec later and BD PID active SW Solution
+          (brewTime == 0 && Brewdetection == 3 && ONLYPID == 1) ||        // Voltagesensor reset brewTime == 0
           ((brewcounter == 10 || brewcounter == 43) && ONLYPID == 0))
       {
         if ((ONLYPID == 1 && Brewdetection == 3) || ONLYPID == 0) { // only delay of shotimer for voltagesensor or brewcounter
           machinestate = kShotTimerAfterBrew;
-          lastbezugszeitMillis = millis(); // for delay
+          lastbrewTimeMillis = millis(); // for delay
         }
 
         if (ONLYPID == 1 && Brewdetection == 1 && timerBrewdetection == 1) { // direct to PID BD
@@ -1602,10 +1602,10 @@ void machinestatevoid() {
     case kShotTimerAfterBrew:
       brewdetection();
 
-      if (millis() - lastbezugszeitMillis > BREWSWITCHDELAY) {
-        Serial.printf("Bezugsdauer: %4.1f s\n", lastbezugszeit / 1000);
+      if (millis() - lastbrewTimeMillis > BREWSWITCHDELAY) {
+        Serial.printf("Bezugsdauer: %4.1f s\n", lastbrewTime / 1000);
         machinestate = kBrewDetectionTrailing;
-        lastbezugszeit = 0;
+        lastbrewTime = 0;
       }
 
       if (SteamON == 1) {
@@ -1636,7 +1636,7 @@ void machinestatevoid() {
         machinestate = kPidNormal;
       }
 
-      if ((bezugsZeit > 0 && ONLYPID == 1 && Brewdetection == 3) || // New Brew inner BD only by Only PID AND Voltage Sensor
+      if ((brewTime > 0 && ONLYPID == 1 && Brewdetection == 3) || // New Brew inner BD only by Only PID AND Voltage Sensor
           (ONLYPID == 0 && brewcounter > 10 && brewcounter <= 42))
       {
         machinestate = kBrew;
@@ -1687,14 +1687,13 @@ void machinestatevoid() {
 
     case kCoolDown:
       if (Brewdetection == 2 || Brewdetection == 3) {
-        /* Bei QuickMill Dampferkennung nur ueber Bezugsschalter moeglich, durch Aufruf von
-         * brewdetection() kann neuer Dampfbezug erkannt werden
+        /* For quickmill:  steam detection only via switch, calling brewdetection() detects new steam request
          */
         brewdetection();
       }
 
       if (Brewdetection == 1 && ONLYPID == 1) {
-        // Ab lokalen Minumum wieder freigeben für state 20, dann wird bist Solltemp geheizt.
+        // if local max reached enable state 20, then heat to settemp.
         if (heatrateaverage > 0 && Input < BrewSetPoint + 2) {
           machinestate = kPidNormal;
         }
@@ -1998,13 +1997,13 @@ void setup() {
     }
 
     // Initialize Pins
-    pinMode(pinRelayVentil, OUTPUT);
-    pinMode(pinRelayPumpe, OUTPUT);
-    pinMode(pinRelayHeater, OUTPUT);
-    pinMode(STEAMONPIN, INPUT);
-    digitalWrite(pinRelayVentil, relayOFF);
-    digitalWrite(pinRelayPumpe, relayOFF);
-    digitalWrite(pinRelayHeater, LOW);
+    pinMode(PINVALVE, OUTPUT);
+    pinMode(PINPUMP, OUTPUT);
+    pinMode(PINHEATER, OUTPUT);
+    pinMode(PINSTEAMSWITCH, INPUT);
+    digitalWrite(PINVALVE, relayOFF);
+    digitalWrite(PINPUMP, relayOFF);
+    digitalWrite(PINHEATER, LOW);
     
     // IF Etrigger selected
     if (ETRIGGER == 1) {
@@ -2033,16 +2032,16 @@ void setup() {
       #endif
     }
 
-    #if (defined(ESP8266) && STEAMONPIN == 16)
-        pinMode(STEAMONPIN, INPUT_PULLDOWN_16);
+    #if (defined(ESP8266) && PINSTEAMSWITCH == 16)
+        pinMode(PINSTEAMSWITCH, INPUT_PULLDOWN_16);
     #endif
 
-    #if (defined(ESP8266) && STEAMONPIN == 15)
-        pinMode(STEAMONPIN, INPUT);
+    #if (defined(ESP8266) && PINSTEAMSWITCH == 15)
+        pinMode(PINSTEAMSWITCH, INPUT);
     #endif
 
     #if defined(ESP32)
-        pinMode(STEAMONPIN, INPUT_PULLDOWN);
+        pinMode(PINSTEAMSWITCH, INPUT_PULLDOWN);
     #endif
 
     #if DISPLAY != 0
@@ -2181,7 +2180,7 @@ void loop()
             timerAlarmDisable(timer);
           #endif
           
-          digitalWrite(pinRelayHeater, LOW); //Stop heating
+          digitalWrite(PINHEATER, LOW); //Stop heating
         });
         
         ArduinoOTA.onError([](ota_error_t error)
@@ -2228,7 +2227,7 @@ void loopcalibrate() {
     checkBlynk();
   }
   
-  digitalWrite(pinRelayHeater, LOW); //Stop heating to be on the safe side ...
+  digitalWrite(PINHEATER, LOW); //Stop heating to be on the safe side ...
 
   unsigned long currentMillisTOF = millis();
 
@@ -2263,7 +2262,7 @@ void looppid() {
     ArduinoOTA.onStart([]()
     {
       disableTimer1();
-      digitalWrite(pinRelayHeater, LOW); //Stop heating
+      digitalWrite(PINHEATER, LOW); //Stop heating
     });
     
     ArduinoOTA.onError([](ota_error_t error)
@@ -2365,7 +2364,7 @@ void looppid() {
       pidMode = 0;
       bPID.SetMode(pidMode);
       Output = 0;
-      digitalWrite(pinRelayHeater, LOW); //Stop heating
+      digitalWrite(PINHEATER, LOW); //Stop heating
     }
   }
   else { // no sensorerror, no pid off or no Emergency Stop
