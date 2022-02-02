@@ -14,7 +14,7 @@
 #include "languages.h"  // for language translation
 #include "icon.h"       // user icons for display
 #include "Storage.h"
-#include "ButtonManager.h"
+
 
 // Libraries
 #include <U8g2lib.h>           // i2c display
@@ -35,6 +35,17 @@
 #include <os.h>
 hw_timer_t *timer = NULL;
 #endif
+
+#include "ButtonManager.h"
+#include "buttons.h"
+#include "singleLED.h"
+#include "Led.h"
+#include "HwSwTranslationINI.h"
+
+#if (PUMPCONTROL > 0)
+#include <RBDdimmer.h>
+#endif
+#include "PumpControl.h"
 
 #if (BREWMODE == 2 || ONLYPIDSCALE == 1)
 #include <HX711_ADC.h>
@@ -72,6 +83,7 @@ enum MachineState
   kBrewDetectionTrailing = 35,
   kSteam = 40,
   kCoolDown = 45,
+  kWater = 47,
   kBackflush = 50,
   kEmergencyStop = 80,
   kPidOffline = 90,
@@ -1481,8 +1493,12 @@ void machinestatevoid() {
         machinestate = kBrew;
       }
 
-      if (SteamON == 1) {
+      if (requestSteam == 1) {
         machinestate = kSteam;
+      }
+
+      if (requestWater == 1) {
+        machinestate = kWater;
       }
 
       if (backflushON || backflushState > 10) {
@@ -1516,11 +1532,15 @@ void machinestatevoid() {
         machinestate = kSteam;
       }
 
+      if (requestWater == true) {
+        machinestate = kWater;
+      }
+
       if (backflushON || backflushState > 10) {
         machinestate = kBackflush;
       }
 
-      if (SteamON == 1) {
+      if (requestSteam == true) {
         machinestate = kSteam;
       }
 
@@ -1544,6 +1564,14 @@ void machinestatevoid() {
       
       if (SteamON == 1) {
         machinestate = kSteam;
+      }
+
+      if (requestSteam == true) {
+        machinestate = kSteam;
+      }
+
+      if (requestWater == true) {
+        machinestate = kWater;
       }
 
       if (backflushON || backflushState > 10) {
@@ -1587,6 +1615,14 @@ void machinestatevoid() {
         machinestate = kSteam;
       }
 
+      if (requestSteam == true) {
+        machinestate = kSteam;
+      }
+
+      if (requestWater == true) {
+        machinestate = kWater;
+      }
+
       if (emergencyStop) {
         machinestate = kEmergencyStop;
       }
@@ -1611,6 +1647,14 @@ void machinestatevoid() {
 
       if (SteamON == 1) {
         machinestate = kSteam;
+      }
+
+      if (requestSteam == true) {
+        machinestate = kSteam;
+      }
+
+      if (requestWater == true) {
+        machinestate = kWater;
       }
 
       if (backflushON || backflushState > 10) {
@@ -1646,6 +1690,14 @@ void machinestatevoid() {
       if (SteamON == 1) {
         machinestate = kSteam;
       }
+      
+      if (requestSteam == true) {
+        machinestate = kSteam;
+      }
+
+      if (requestWater == true) {
+        machinestate = kWater;
+      }
 
       if (backflushON || backflushState > 10) {
         machinestate = kBackflush;
@@ -1669,6 +1721,10 @@ void machinestatevoid() {
         machinestate = kCoolDown;
       }
 
+      if (requestSteam == false) {
+        machinestate = kCoolDown;
+      }
+
       if (emergencyStop) {
         machinestate = kEmergencyStop;
       }
@@ -1685,6 +1741,31 @@ void machinestatevoid() {
         machinestate = kSensorError;
       }
       break;
+
+    case kWater:
+      
+      if (emergencyStop) {
+        machinestate = kEmergencyStop;
+      }
+
+      if (backflushON || backflushState > 10) {
+        machinestate = kBackflush;
+      }
+
+      if (pidON == 0) {
+        machinestate = kPidOffline; 
+      }
+      
+      if (sensorError) {
+        machinestate = kSensorError;
+      }
+      if (requestWater == 0) {
+        pump.setState(OFF);
+        machinestate = kPidNormal;
+      }
+
+      break;
+
 
     case kCoolDown:
       if (Brewdetection == 2 || Brewdetection == 3) {
@@ -1705,6 +1786,10 @@ void machinestatevoid() {
       }
 
       if (SteamON == 1) {
+        machinestate = kSteam;
+      }
+
+      if (requestSteam == true) {
         machinestate = kSteam;
       }
 
@@ -1954,10 +2039,12 @@ void setup() {
 
   storageSetup();
 
-  #include "buttons.h"
+  
   #include "Led.h"
-  #include "HwSwTranslationINI.h"
-
+  if (PUMPCONTROL == 1){
+    pump.begin(NORMAL_MODE, OFF);
+  }
+  
   // Check AP Mode
   checklastpoweroff();
 
@@ -2418,6 +2505,11 @@ void looppid() {
     bPID.SetTunings(aggKp, aggKi, aggKd, PonE);
     kaltstart = false;
   }
+
+  if (machinestate == kWater) {
+    pump.setPower(100);
+    pump.setState(ON);
+  } 
 
   // BD PID
   if (machinestate >= 30 && machinestate <= 35) {

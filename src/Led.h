@@ -1,8 +1,9 @@
-/*Setup File for LED Outputs
+/*Setup File for LED OUTPUTs
 */
 
-pinmode(PINBREWSWITCHLED, Output);
-pinmode(PINSTEAMSWITCHLED, Output);
-pinmode(PINWATERSWITCHLED, Output);
-pinmode(PINPOWERSWITCHLED, Output):
-pinmode(PINSTATUSLED, Output);
+
+singleLed brewLed(PINBREWSWITCHLED);
+singleLed steamLed(PINSTEAMSWITCHLED);
+singleLed waterLed(PINWATERSWITCHLED);
+singleLed powerLed(PINPOWERSWITCHLED);
+singleLed statusLed(PINSTATUSLED);

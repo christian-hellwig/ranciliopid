@@ -1,0 +1,1 @@
+dimmerLamp pump(PINPUMP, PINZEROCROSS);

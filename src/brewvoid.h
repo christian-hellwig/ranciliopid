@@ -7,7 +7,7 @@ void checkbrewswitch()
   #if BREWSWITCHTYPE == 1
     #if (PINBREWSWITCH > 0)
       // Digital GIPO
-      brewswitch = digitalRead(PINBREWSWITCH);
+      requestBrew = digitalRead(PINBREWSWITCH);
     #endif
     // Digital Analog
     #if (PINBREWSWITCH == 0)
@@ -17,11 +17,11 @@ void checkbrewswitch()
         previousMillistempanalogreading = currentMillistemp;
         if (filter(analogRead(analogPin)) > 1000 )
         {
-          brewswitch = HIGH ; 
+          requestBrew = HIGH ; 
         }
         if (filter(analogRead(analogPin)) < 1000 )
         {
-          brewswitch = LOW ;
+          requestBrew = LOW ;
         }
       }
     #endif
@@ -64,7 +64,7 @@ void checkbrewswitch()
           }
         }
     #endif
-        // Triggersignal umsetzen in brewswitch
+        // Triggersignal umsetzen in requestBrew
     switch(brewswitchTriggerCase) 
     {
       case 10:
@@ -80,7 +80,7 @@ void checkbrewswitch()
         if (brewswitchTrigger == LOW)
         { 
           // Brew trigger
-          brewswitch = HIGH  ;
+          requestBrew = HIGH  ;
           brewswitchTriggerCase = 30 ;
           Serial.println("brewswitchTriggerCase 20: Brew Trigger HIGH");
         }
@@ -96,7 +96,7 @@ void checkbrewswitch()
       break ;
       case 30:
         // Stop Manual brewing, button goes low: 
-        if (brewswitchTrigger == LOW && brewswitch == LOW)
+        if (brewswitchTrigger == LOW && requestBrew == LOW)
         {
           brewswitchTriggerCase = 40 ; 
           brewswitchTriggermillis = millis() ;     
@@ -104,10 +104,10 @@ void checkbrewswitch()
           digitalWrite(PINVALVE, relayOFF);
           digitalWrite(PINPUMP, relayOFF);
         }
-        // Stop Brew trigger  brewswitch == HIGH
-        if (brewswitchTrigger == HIGH && brewswitch == HIGH)
+        // Stop Brew trigger  requestBrew == HIGH
+        if (brewswitchTrigger == HIGH && requestBrew == HIGH)
         {
-          brewswitch = LOW  ;
+          requestBrew = LOW  ;
           brewswitchTriggerCase = 40 ; 
           brewswitchTriggermillis = millis() ; 
           Serial.println("brewswitchTriggerCase 30: Brew Trigger LOW");
@@ -150,7 +150,7 @@ void backflush()
   
   checkbrewswitch() ;
 
-  if (brewswitch == LOW && backflushState > 10) {   //abort function for state machine from every state
+  if (requestBrew == LOW && backflushState > 10) {   //abort function for state machine from every state
     backflushState = 43;
   }
 
@@ -158,7 +158,7 @@ void backflush()
   switch (backflushState) 
   {
     case 10:    // waiting step for brew switch turning on
-      if (brewswitch == HIGH && backflushON) {
+      if (requestBrew == HIGH && backflushON) {
         startingTime = millis();
         backflushState = 20;
       }
@@ -190,8 +190,8 @@ void backflush()
         backflushState = 43;
       }
       break;
-    case 43:    // waiting for brewswitch off position
-      if (brewswitch == LOW) {
+    case 43:    // waiting for requestBrew off position
+      if (requestBrew == LOW) {
         Serial.println("backflush finished");
         digitalWrite(PINVALVE, relayOFF);
         digitalWrite(PINPUMP, relayOFF);
@@ -215,7 +215,7 @@ void brew()
     unsigned long currentMillistemp = millis();
     checkbrewswitch() ;
 
-    if (brewswitch == LOW && brewcounter > 10)
+    if (requestBrew == LOW && brewcounter > 10)
     {
       // abort function for state machine from every state
       Serial.println("Brew stopped manually");
@@ -225,9 +225,9 @@ void brew()
     if (brewcounter > 10 && brewcounter < 43 ) {
       brewTime = currentMillistemp - startingTime;
     }
-    if (brewswitch == LOW && firstreading == 0 ) 
+    if (requestBrew == LOW && firstreading == 0 ) 
     {   
-      // check if brewswitch was turned off at least once, last time,
+      // check if requestBrew was turned off at least once, last time,
       brewswitchWasOFF = true;
     }
 
@@ -237,7 +237,7 @@ void brew()
     switch (brewcounter) {
     case 10:    
         // waiting step for brew switch turning on
-        if (brewswitch == HIGH && backflushState == 10 && backflushON == 0 && brewswitchWasOFF) {
+        if (requestBrew == HIGH && backflushState == 10 && backflushON == 0 && brewswitchWasOFF) {
           startingTime = millis();
           if (preinfusionpause == 0 || preinfusion == 0){
           brewcounter = 40;
@@ -253,8 +253,15 @@ void brew()
       case 20:    //preinfusioon
         Serial.println("Preinfusion");
         digitalWrite(PINVALVE, relayON);
-        digitalWrite(PINPUMP, relayON);
-        brewcounter = 21;
+        if (PUMPCONTROL == 1) {
+          pump.setPower(25);
+          pump.setState(ON);
+          brewcounter = 40;
+          }
+        else {
+          digitalWrite(PINPUMP, relayON);
+          brewcounter = 21;
+        }
         break;
       case 21:    //waiting time preinfusion
         if (brewTime > (preinfusion*1000)) {
@@ -274,8 +281,13 @@ void brew()
         break;
       case 40:    //brew running
         Serial.println("Brew started");
-        digitalWrite(PINVALVE, relayON);
-        digitalWrite(PINPUMP, relayON);
+        if (PUMPCONTROL == 1) {
+          pump.setPower(100);
+        }
+        else {
+          digitalWrite(PINVALVE, relayON);
+          digitalWrite(PINPUMP, relayON);
+        }
         brewcounter = 41;
         break;
       case 41:    //waiting time brew
@@ -286,15 +298,26 @@ void brew()
         break;
       case 42:    //brew finished
         Serial.println("Brew stopped");
-        digitalWrite(PINVALVE, relayOFF);
-        digitalWrite(PINPUMP, relayOFF);
-        brewcounter = 43;
-        brewTime = 0;
-        break;
-      case 43:    // waiting for brewswitch off position
-        if (brewswitch == LOW) {
+        if (PUMPCONTROL == 1) {
+          pump.setState(OFF);
+        }
+        else {
           digitalWrite(PINVALVE, relayOFF);
           digitalWrite(PINPUMP, relayOFF);
+        }
+        brewcounter = 43;
+        brewTime = 0;
+        requestBrew = false;
+        break;
+      case 43:    // waiting for requestBrew off
+        if (requestBrew == LOW) {
+          if (PUMPCONTROL == 1) {
+          pump.setState(OFF);
+          }
+          else {
+            digitalWrite(PINVALVE, relayOFF);
+            digitalWrite(PINPUMP, relayOFF);
+          }
           // lastbrewTimeMillis = millis();  // for shottimer delay after disarmed button
           currentMillistemp = 0;
           brewDetected = 0; //rearm brewdetection
@@ -315,7 +338,7 @@ void brew()
     checkbrewswitch() ;
     unsigned long currentMillistemp = millis();
 
-    if (brewswitch == LOW && brewcounter > 10)
+    if (requestBrew == LOW && brewcounter > 10)
     {
       // abort function for state machine from every state
       brewcounter = 43;
@@ -326,9 +349,9 @@ void brew()
       weightBrew = weight - weightPreBrew;
 
     }
-    if (brewswitch ==  LOW && firstreading == 0 )
+    if (requestBrew ==  LOW && firstreading == 0 )
     { 
-      // check if brewswitch was turned off at least once, last time,
+      // check if requestBrew was turned off at least once, last time,
       brewswitchWasOFF = true;
     }
 
@@ -337,7 +360,7 @@ void brew()
     // state machine for brew
     switch (brewcounter) {
       case 10:    // waiting step for brew switch turning on
-        if (brewswitch == HIGH && backflushState == 10 && backflushON == 0 && brewswitchWasOFF) {
+        if (requestBrew == HIGH && backflushState == 10 && backflushON == 0 && brewswitchWasOFF) {
           startingTime = millis();
           brewcounter = 20;
           if (preinfusionpause == 0 || preinfusion == 0)
@@ -392,8 +415,9 @@ void brew()
         digitalWrite(PINPUMP, relayOFF);
         brewcounter = 43;
         break;
-        case 43:    // waiting for brewswitch off position
-        if (brewswitch == LOW) {
+        requestBrew = false;
+        case 43:    // waiting for requestBrew off 
+        if (requestBrew == LOW) {
           digitalWrite(PINVALVE, relayOFF);
           digitalWrite(PINPUMP, relayOFF);
           //brewTime_last_Millis = millis();  // for shottimer delay after disarmed button
