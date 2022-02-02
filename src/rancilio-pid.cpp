@@ -14,6 +14,7 @@
 #include "languages.h"  // for language translation
 #include "icon.h"       // user icons for display
 #include "Storage.h"
+#include "ButtonManager.h"
 
 // Libraries
 #include <U8g2lib.h>           // i2c display
@@ -1953,6 +1954,10 @@ void setup() {
 
   storageSetup();
 
+  #include "buttons.h"
+  #include "Led.h"
+  #include "HwSwTranslationINI.h"
+
   // Check AP Mode
   checklastpoweroff();
 
@@ -2246,6 +2251,7 @@ void loopcalibrate() {
 }
 
 void looppid() {
+  #include "HwSwTranslationLoop.h"
   //Only do Wifi stuff, if Wifi is connected
   if (WiFi.status() == WL_CONNECTED && Offlinemodus == 0) {
     if (MQTT == 1) {
