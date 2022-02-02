@@ -1355,11 +1355,11 @@ void ETriggervoid() {
  */
 void checkSteamON() {
   // check digital GIPO
-  if (digitalRead(PINSTEAMSWITCH) == HIGH) {
+  if (digitalRead(PINSTEAMSWITCH_OLD) == HIGH) {
     SteamON = 1;
   }
 
-  if (digitalRead(PINSTEAMSWITCH) == LOW && SteamFirstON == 0) // if via blynk on, then SteamFirstON == 1, prevent override
+  if (digitalRead(PINSTEAMSWITCH_OLD) == LOW && SteamFirstON == 0) // if via blynk on, then SteamFirstON == 1, prevent override
   {
     SteamON = 0;
   }
@@ -2092,7 +2092,7 @@ void setup() {
     pinMode(PINVALVE, OUTPUT);
     pinMode(PINPUMP, OUTPUT);
     pinMode(PINHEATER, OUTPUT);
-    pinMode(PINSTEAMSWITCH, INPUT);
+    pinMode(PINSTEAMSWITCH_OLD, INPUT);
     digitalWrite(PINVALVE, relayOFF);
     digitalWrite(PINPUMP, relayOFF);
     digitalWrite(PINHEATER, LOW);
@@ -2108,32 +2108,32 @@ void setup() {
       pinMode(PINVOLTAGESENSOR, PINMODEVOLTAGESENSOR);
     }
 
-    // IF PINBREWSWITCH & Steam selected
-    if (PINBREWSWITCH > 0) {
-      #if (defined(ESP8266) && PINBREWSWITCH == 16)
-        pinMode(PINBREWSWITCH, INPUT_PULLDOWN_16);
+    // IF PINBREWSWITCH_OLD & Steam selected
+    if (PINBREWSWITCH_OLD > 0) {
+      #if (defined(ESP8266) && PINBREWSWITCH_OLD == 16)
+        pinMode(PINBREWSWITCH_OLD, INPUT_PULLDOWN_16);
       #endif
 
-      #if (defined(ESP8266) && PINBREWSWITCH == 15)
-        pinMode(PINBREWSWITCH, INPUT);
+      #if (defined(ESP8266) && PINBREWSWITCH_OLD == 15)
+        pinMode(PINBREWSWITCH_OLD, INPUT);
       #endif
 
       #if defined(ESP32)
-        pinMode(PINBREWSWITCH, INPUT_PULLDOWN);
+        pinMode(PINBREWSWITCH_OLD, INPUT_PULLDOWN);
         ; //
       #endif
     }
 
-    #if (defined(ESP8266) && PINSTEAMSWITCH == 16)
-        pinMode(PINSTEAMSWITCH, INPUT_PULLDOWN_16);
+    #if (defined(ESP8266) && PINSTEAMSWITCH_OLD == 16)
+        pinMode(PINSTEAMSWITCH_OLD, INPUT_PULLDOWN_16);
     #endif
 
-    #if (defined(ESP8266) && PINSTEAMSWITCH == 15)
-        pinMode(PINSTEAMSWITCH, INPUT);
+    #if (defined(ESP8266) && PINSTEAMSWITCH_OLD == 15)
+        pinMode(PINSTEAMSWITCH_OLD, INPUT);
     #endif
 
     #if defined(ESP32)
-        pinMode(PINSTEAMSWITCH, INPUT_PULLDOWN);
+        pinMode(PINSTEAMSWITCH_OLD, INPUT_PULLDOWN);
     #endif
 
     #if DISPLAY != 0

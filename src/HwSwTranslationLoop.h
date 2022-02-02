@@ -9,7 +9,7 @@ steamSwitch.tick();
 waterSwitch.tick();
 powerSwitch.tick();
 
-if (brewSwitch.getSingleClick() == true) {
+if (brewSwitch.getSingleClick() == true && requestBrew == false) {
     requestBrew = true;
 }
 
@@ -62,7 +62,7 @@ else {
 statusLed.update();
 if ((machinestate == kPidNormal && (fabs(Input - setPoint) < 0.5)) || (Input > 115 && fabs(Input - BrewSetPoint) < 5)) {
       statusLed.setOffSingle();
-    }
+}
 else {
     statusLed.setOnSingle();
 }
