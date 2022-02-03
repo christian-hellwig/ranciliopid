@@ -21,7 +21,7 @@
     _pin=-1;
 }
 
-ButtonManager::ButtonManager(const char pin, const boolean activeHigh, const bool pulldownActive, const bool pullupActive)
+ButtonManager::ButtonManager(const char pin, const bool activeHigh, const bool pulldownActive, const bool pullupActive)
 {
   // ButtonManager();
   _pin = pin;

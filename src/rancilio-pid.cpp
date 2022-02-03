@@ -2343,8 +2343,8 @@ void looppid() {
   //Serial.println((String)"requestBrew" + requestBrew);
   //Serial.println((String)"requestSteam" + requestSteam);
   //Serial.println((String)"requestWater" + requestWater);
-  Serial.println((String)"powerButton" + digitalRead(PINPOWERSWITCH));
   #include "HwSwTranslationLoop.h"
+  Serial.println((String)"requestBrew" + brewSwitch.getNumberClicks());
   //Only do Wifi stuff, if Wifi is connected
   if (WiFi.status() == WL_CONNECTED && Offlinemodus == 0) {
     if (MQTT == 1) {

@@ -167,9 +167,9 @@ public:
 
 private:
   int _pin;                         // hardware pin number.
-  unsigned int _debounceTicks = 50; // number of ticks for debounce times.
-  unsigned int _clickTicks = 200;   // number of msecs before a click is detected.
-  unsigned int _pressTicks = 800;   // number of msecs before a long button press is detected
+  unsigned int _debounceTicks = 30; // number of ticks for debounce times.
+  unsigned int _clickTicks = 10;   // number of msecs before a click is detected.
+  unsigned int _pressTicks = 500;   // number of msecs before a long button press is detected
 
   int _buttonPressed;
 
