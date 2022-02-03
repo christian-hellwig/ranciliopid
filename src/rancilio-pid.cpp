@@ -2338,6 +2338,12 @@ void loopcalibrate() {
 }
 
 void looppid() {
+
+  //Serial.println((String)"machinestate" + machinestate);
+  //Serial.println((String)"requestBrew" + requestBrew);
+  //Serial.println((String)"requestSteam" + requestSteam);
+  //Serial.println((String)"requestWater" + requestWater);
+  Serial.println((String)"powerButton" + digitalRead(PINPOWERSWITCH));
   #include "HwSwTranslationLoop.h"
   //Only do Wifi stuff, if Wifi is connected
   if (WiFi.status() == WL_CONNECTED && Offlinemodus == 0) {
